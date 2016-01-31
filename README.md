@@ -16,7 +16,7 @@ By default, metrics are provided on [https://localhost:8443/metrics](https://loc
 Type `exim_prometheus_exporter -h` to see a list of command line options.
 
 
-In order to access _https_ metris from the Prometheus server, add something like this to the server's `prometheus.yml` configuration:
+In order to access _https_ metrics with self-signed certificates from the Prometheus server, add something like this to the server's `prometheus.yml` configuration:
 
 ```yaml
   - job_name: "exim-server"
