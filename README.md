@@ -15,6 +15,19 @@ exim_prometheus_exporter -mainlog /path/to/mainlog
 By default, metrics are provided on [https://localhost:8443/metrics](https://localhost:8443/metrics).
 Type `exim_prometheus_exporter -h` to see a list of command line options.
 
+
+In order to access _https_ metris from the Prometheus server, add something like this to the server's `prometheus.yml` configuration:
+
+```yaml
+  - job_name: "exim-server"
+    scrape_interval: "60s"
+    scheme: "https"
+    tls_config:
+      insecure_skip_verify: true
+    target_groups:
+    - targets: ['mail.example.com:8443']
+```
+
 Installation
 ------------
 
