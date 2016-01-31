@@ -3,7 +3,7 @@ exim_prometheus_exporter
 
 [Prometheus](http://prometheus.io) exporter for monitoring the [Exim](http://www.exim.org/) Mail Transfer Agent (MTA).
 
-Like [eximstats](http://www.exim.org/exim-html-current/doc/html/spec_html/ch-exim_utilities.html#SECTmailstat), the `exim_prometheus_exporter` generates statistics from Exim `mainlog` file. It does not interact with Exim directly.
+Like [eximstats](http://www.exim.org/exim-html-current/doc/html/spec_html/ch-exim_utilities.html#SECTmailstat), the `exim_prometheus_exporter` generates statistics from Exim's `mainlog` file. It does not interact with Exim directly.
 
 Usage
 -----
