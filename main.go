@@ -4,11 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"github.com/ActiveState/tail"
+	"github.com/fstab/exim_prometheus_exporter/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"io/ioutil"
 	"net/http"
 	"os"
-	"strings"
 )
 
 // cert and key created with openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -nodes
@@ -73,19 +73,24 @@ var (
 	key     = flag.String("key", "", "Path to the SSL private key file for the HTTPS server. (optional)")
 )
 
+type Metric interface {
+	Collector() prometheus.Collector
+	Observe(logline string)
+}
+
 var (
-	rejectedRcptCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "exim_rejected_rcpt_total",
-		Help: "Total number of rejected recipients, partitioned by error message.",
-	}, []string{
-		"error_message",
-	})
+	Metrics = []Metric{
+		metrics.NewRejectedRcptMetric(),
+		metrics.NewAuthenticatorFailedMetric(),
+	}
 )
 
 func main() {
 	flag.Parse()
-	prometheus.MustRegister(rejectedRcptCounter)
 	t := mustInitMainlogWatcher()
+	for _, m := range Metrics {
+		prometheus.MustRegister(m.Collector())
+	}
 	go runMainlogWatcher(t)
 	runHttpServer()
 }
@@ -111,28 +116,10 @@ func runMainlogWatcher(t *tail.Tail) {
 			fmt.Errorf("Failed to tail %v: %v", *mainlog, line.Err.Error())
 			os.Exit(-1)
 		}
-		parseLogLine(line.Text)
+		for _, m := range Metrics {
+			m.Observe(line.Text)
+		}
 	}
-}
-
-func parseLogLine(line string) {
-	if strings.Contains(line, "rejected RCPT") && !strings.Contains(line, "temporarily rejected RCPT") {
-		msg := parseRejectedRcptErrorMessage(line)
-		rejectedRcptCounter.WithLabelValues(msg).Inc()
-	}
-}
-
-func parseRejectedRcptErrorMessage(line string) string {
-	var result string
-	parts := strings.Split(line, ":") // after ':' should be the error message
-	if len(parts) >= 2 && strings.Contains(parts[len(parts)-2], "rejected RCPT") {
-		result = strings.TrimSpace(parts[len(parts)-1])
-	}
-	if len(result) == 0 {
-		fmt.Fprintf(os.Stderr, "Found 'rejected RCPT' log line with unknown error message: %v", line)
-		return "unknown error"
-	}
-	return result
 }
 
 func runHttpServer() {
