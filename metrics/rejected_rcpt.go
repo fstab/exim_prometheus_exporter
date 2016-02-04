@@ -26,11 +26,13 @@ func (m *rejectedRcptMetric) Collector() prometheus.Collector {
 	return m.counter
 }
 
-func (m *rejectedRcptMetric) Observe(line string) {
-	if strings.Contains(line, "rejected RCPT") && !strings.Contains(line, "temporarily rejected RCPT") {
-		msg := m.parseRejectedRcptErrorMessage(line)
-		m.counter.WithLabelValues(msg).Inc()
-	}
+func (m *rejectedRcptMetric) Matches(line string) bool {
+	return strings.Contains(line, "rejected RCPT") && !strings.Contains(line, "temporarily rejected RCPT")
+}
+
+func (m *rejectedRcptMetric) Process(line string) {
+	msg := m.parseRejectedRcptErrorMessage(line)
+	m.counter.WithLabelValues(msg).Inc()
 }
 
 func (m *rejectedRcptMetric) parseRejectedRcptErrorMessage(line string) string {

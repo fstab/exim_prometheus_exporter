@@ -25,12 +25,14 @@ func (m *authenticatorFailedMetric) Collector() prometheus.Collector {
 	return m.counter
 }
 
-func (m *authenticatorFailedMetric) Observe(line string) {
-	if strings.Contains(line, "authenticator failed") {
-		authenticator := m.parseAuthenticator(line)
-		message := m.parseErrorMessage(line)
-		m.counter.WithLabelValues(authenticator, message).Inc()
-	}
+func (m *authenticatorFailedMetric) Matches(line string) bool {
+	return strings.Contains(line, "authenticator failed")
+}
+
+func (m *authenticatorFailedMetric) Process(line string) {
+	authenticator := m.parseAuthenticator(line)
+	message := m.parseErrorMessage(line)
+	m.counter.WithLabelValues(authenticator, message).Inc()
 }
 
 func (m *authenticatorFailedMetric) parseAuthenticator(line string) string {
