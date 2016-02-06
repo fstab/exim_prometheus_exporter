@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 )
 
 var (
@@ -20,23 +21,13 @@ var (
 	key     = flag.String("key", "", "Path to the SSL private key file for the HTTPS server. (optional)")
 )
 
-type Metric interface {
-	Collector() prometheus.Collector
-	Matches(ling string) bool
-	Process(line string)
-}
-
 var (
-	Metrics = []Metric{
-		metrics.NewRejectedRcptMetric(),
-		metrics.NewAuthenticatorFailedMetric(),
-	}
-	// The following counter keeps track of how many log lines are processed by the metrics above.
+	// total keeps track of how many log lines are processed by the Metrics.
 	total = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: "exim_loglines_total",
 		Help: "Total number of lines in Exim's mainlog. The 'processed' flag tells if exim_prometheus_exporter has processed this line (if false the line was ignored).",
 	}, []string{
-		"processed",
+		"processed", "metric",
 	})
 )
 
@@ -61,7 +52,7 @@ func parseCommandline() {
 }
 
 func initPrometheus() {
-	for _, m := range Metrics {
+	for _, m := range metrics.Metrics {
 		prometheus.MustRegister(m.Collector())
 	}
 	prometheus.MustRegister(total)
@@ -113,11 +104,13 @@ func tailFile(logfile string, readall bool) (*tail.Tail, error) {
 
 func process(line string) {
 	processed := false
-	for _, metric := range Metrics {
+	metricNames := make([]string, 0)
+	for _, metric := range metrics.Metrics {
 		if metric.Matches(line) {
 			metric.Process(line)
 			processed = true
+			metricNames = append(metricNames, metric.Name())
 		}
 	}
-	total.WithLabelValues(strconv.FormatBool(processed)).Inc()
+	total.WithLabelValues(strconv.FormatBool(processed), strings.Join(metricNames, ", ")).Inc()
 }

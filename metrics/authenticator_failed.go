@@ -6,6 +6,8 @@ import (
 	"strings"
 )
 
+const exim_authenticator_failed_total = "exim_authenticator_failed_total"
+
 type authenticatorFailedMetric struct {
 	counter *prometheus.CounterVec
 }
@@ -13,12 +15,16 @@ type authenticatorFailedMetric struct {
 func NewAuthenticatorFailedMetric() *authenticatorFailedMetric {
 	return &authenticatorFailedMetric{
 		counter: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Name: "exim_authenticator_failed_total",
+			Name: exim_authenticator_failed_total,
 			Help: "Total number of rejected authentication attempts.",
 		}, []string{
 			"authenticator", "error_message",
 		}),
 	}
+}
+
+func (m *authenticatorFailedMetric) Name() string {
+	return exim_authenticator_failed_total
 }
 
 func (m *authenticatorFailedMetric) Collector() prometheus.Collector {

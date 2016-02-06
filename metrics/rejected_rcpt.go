@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+const exim_rejected_rcpt_total = "exim_rejected_rcpt_total"
+
 type rejectedRcptMetric struct {
 	counter *prometheus.CounterVec
 }
@@ -14,12 +16,16 @@ type rejectedRcptMetric struct {
 func NewRejectedRcptMetric() *rejectedRcptMetric {
 	return &rejectedRcptMetric{
 		counter: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Name: "exim_rejected_rcpt_total",
+			Name: exim_rejected_rcpt_total,
 			Help: "Total number of rejected recipients, partitioned by error message.",
 		}, []string{
 			"error_message",
 		}),
 	}
+}
+
+func (m *rejectedRcptMetric) Name() string {
+	return exim_rejected_rcpt_total
 }
 
 func (m *rejectedRcptMetric) Collector() prometheus.Collector {
